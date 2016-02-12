@@ -1,0 +1,6 @@
+zookeeper:
+  image: pmdcosta/zookeeper
+kafka:
+  image: pmdcosta/kafka
+  links:
+    - zookeeper:zk

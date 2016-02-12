@@ -6,9 +6,9 @@ if [[ -z "$KAFKA_PORT" ]]; then
 fi
 
 # Set Advertised Port
-if [[ -z "$KAFKA_ADVERTISED_PORT" ]]; then
-    export KAFKA_ADVERTISED_PORT=$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")
-fi
+#if [[ -z "$KAFKA_ADVERTISED_PORT" ]]; then
+#    export KAFKA_ADVERTISED_PORT=$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")
+#fi
 
 # Set Broker Id
 # By default auto allocate broker ID

@@ -2,12 +2,14 @@ FROM anapsix/alpine-java
 MAINTAINER Pedro Costa
 
 # Kafka stable version
-ENV KAFKA_VERSION="0.9.0.0" SCALA_VERSION="2.11"
+ENV KAFKA_VERSION 0.9.0.0
+ENV SCALA_VERSION 2.11
 
 # Download Kafka
-RUN wget -q http://mirrors.fe.up.pt/pub/apache/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz && \
+RUN wget -q http://mirrors.fe.up.pt/pub/apache/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz
 
 # Install Kafka
+RUN apk add --update coreutils
 RUN tar -xzf kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt && \
     rm kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz
 
