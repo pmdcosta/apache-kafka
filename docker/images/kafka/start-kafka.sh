@@ -1,56 +1,45 @@
-#!/bin/sh
+#!/bin/bash
+
+# Mandatory ENV variables:
+# * HOSTNAME_COMMAND: 'hostname -i'
 
 # Optional ENV variables:
-# * ADVERTISED_HOST: the external IP for the container
-# * ADVERTISED_PORT: the external port for Kafka, e.g. 9092
-# * BROKER_ID: the id of the broker, by default auto allocate broker ID
-# * LOG_RETENTION_HOURS: the minimum age of a log file in hours to be eligible for deletion (default is 168, for 1 week)
-# * LOG_RETENTION_BYTES: configure the size at which segments are pruned from the log, (default is 1073741824, for 1GB)
-# * AUTO_CREATE_TOPICS: enable/disable auto creation of topics
+# * KAFKA_PORT: 9092
+# * KAFKA_BROKER_ID: -1
+# * KAFKA_ZOOKEEPER_CONNECT: 172.170.0.2:2181
+# * KAFKA_ADVERTISED_HOST_NAME: 192.168.1.200
+# * KAFKA_ADVERTISED_PORT: 9092
 
-# Set the external host and port
-if [ ! -z "$HOST_NAME" ]; then
-    echo "hostname: $HOST_NAME"
-    sed -r -i "s/#(host.name.name)=(.*)/\1=$HOST_NAME/g" $KAFKA_HOME/config/server.properties
-fi
-if [ ! -z "$ADVERTISED_HOST" ]; then
-    echo "advertised host: $ADVERTISED_HOST"
-    sed -r -i "s/#(advertised.host.name)=(.*)/\1=$ADVERTISED_HOST/g" $KAFKA_HOME/config/server.properties
-fi
-if [ ! -z "$ADVERTISED_PORT" ]; then
-    echo "advertised port: $ADVERTISED_PORT"
-    sed -r -i "s/#(advertised.port)=(.*)/\1=$ADVERTISED_PORT/g" $KAFKA_HOME/config/server.properties
-fi
+# Kafka variables can be set, such as:
+# * KAFKA_MESSAGE_MAX_BYTES: 2000000
 
-# Set zookeeper host and port
-if [ ! -z "$ZOOKEEPER_CONNECT" ]; then
-    echo "zookeeper connect: $ZOOKEEPER_CONNECT"
-    sed -r -i "s/(zookeeper.connect)=(.*)/\1=$ZOOKEEPER_CONNECT/g" $KAFKA_HOME/config/server.properties
+if [[ -z "$KAFKA_PORT" ]]; then
+    export KAFKA_PORT=9092
+fi
+if [[ -z "$KAFKA_BROKER_ID" ]]; then
+    export KAFKA_BROKER_ID=-1
+fi
+if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
+    export KAFKA_ZOOKEEPER_CONNECT=$(env | grep ZK.*PORT_2181_TCP= | sed -e 's|.*tcp://||' | paste -sd ,)
+fi
+if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" && -n "$HOSTNAME_COMMAND" ]]; then
+    export KAFKA_ADVERTISED_HOST_NAME=$(eval $HOSTNAME_COMMAND)
 fi
 
-# Set Broker Id
-# By default auto allocate broker ID
-if [[ -z "$BROKER_ID" ]]; then
-    export BROKER_ID=-1
-    echo "broker id: $BROKER_ID"
-    sed -r -i "s/#(zookeeper.connect)=(.*)/\1=$BROKER_ID/g" $KAFKA_HOME/config/server.properties
-fi
+for VAR in `env`
+do
+  if [[ $VAR =~ ^KAFKA_ && ! $VAR =~ ^KAFKA_HOME ]]; then
+    kafka_name=`echo "$VAR" | sed -r "s/KAFKA_(.*)=.*/\1/g" | tr '[:upper:]' '[:lower:]' | tr _ .`
+    env_var=`echo "$VAR" | sed -r "s/(.*)=.*/\1/g"`
+    if egrep -q "(^|^#)$kafka_name=" $KAFKA_HOME/config/server.properties; then
+        sed -r -i "s@(^|^#)($kafka_name)=(.*)@\2=${!env_var}@g" $KAFKA_HOME/config/server.properties
+    else
+        echo "$kafka_name=${!env_var}" >> $KAFKA_HOME/config/server.properties
+    fi
+  fi
+done
 
-# Allow specification of log retention policies
-if [ ! -z "$LOG_RETENTION_HOURS" ]; then
-    echo "log retention hours: $LOG_RETENTION_HOURS"
-    sed -r -i "s/(log.retention.hours)=(.*)/\1=$LOG_RETENTION_HOURS/g" $KAFKA_HOME/config/server.properties
-fi
-if [ ! -z "$LOG_RETENTION_BYTES" ]; then
-    echo "log retention bytes: $LOG_RETENTION_BYTES"
-    sed -r -i "s/#(log.retention.bytes)=(.*)/\1=$LOG_RETENTION_BYTES/g" $KAFKA_HOME/config/server.properties
-fi
+# Capture kill requests to stop properly
+trap "$KAFKA_HOME/bin/kafka-server-stop.sh; echo 'Kafka stopped.'; exit" SIGHUP SIGINT SIGTERM
 
-# Enable/disable auto creation of topics
-if [ ! -z "$AUTO_CREATE_TOPICS" ]; then
-    echo "auto.create.topics.enable: $AUTO_CREATE_TOPICS"
-    echo "auto.create.topics.enable=$AUTO_CREATE_TOPICS" >> $KAFKA_HOME/config/server.properties
-fi
-
-# Run Kafka
 $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties

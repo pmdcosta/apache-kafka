@@ -4,3 +4,5 @@ kafka:
   image: pmdcosta/kafka
   links:
     - zookeeper:zk
+  environment:
+    HOSTNAME_COMMAND: 'hostname -i'

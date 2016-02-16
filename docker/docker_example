@@ -1,0 +1,22 @@
+# ------------------------------------
+#--------------- Zookeeper -----------
+# ------------------------------------
+docker run -d --name docker_zookeeper_1 pmdcosta/zookeeper
+
+# ------------------------------------
+#----------------- Kafka -------------
+# ------------------------------------
+docker run -d --name docker_kafka_1 --link zookeeper:zk -e HOSTNAME_COMMAND='hostname -i' pmdcosta/kafka
+
+# ------------------------------------
+#----------------- Shell -------------
+# ------------------------------------
+docker run -it --rm --name shell_1 --link docker_zookeeper_1:zk --link docker_kafka_1:kafka pmdcosta/kafka bash
+
+# ------------------------------------
+#--------------- Commands ------------
+# ------------------------------------
+$KAFKA_HOME/bin/kafka-topics.sh --create --topic topic --partitions 1 --zookeeper zk --replication-factor 1
+$KAFKA_HOME/bin/kafka-topics.sh --describe --topic topic --zookeeper zk
+$KAFKA_HOME/bin/kafka-console-producer.sh --topic=topic --broker-list=kafka:9092
+$KAFKA_HOME/bin/kafka-console-consumer.sh --topic=topic --zookeeper=zk --from-beginning
