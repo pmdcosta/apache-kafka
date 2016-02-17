@@ -6,7 +6,7 @@ docker run -d --name docker_zookeeper_1 pmdcosta/zookeeper
 # ------------------------------------
 #----------------- Kafka -------------
 # ------------------------------------
-docker run -d --name docker_kafka_1 --link zookeeper:zk -e HOSTNAME_COMMAND='hostname -i' pmdcosta/kafka
+docker run -d --name docker_kafka_1 --link docker_zookeeper_1:zk -e HOSTNAME_COMMAND='hostname -i' -e KAFKA_PORT=9092 pmdcosta/kafka
 
 # ------------------------------------
 #----------------- Shell -------------

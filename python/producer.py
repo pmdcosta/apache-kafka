@@ -4,7 +4,7 @@ from kafka.common import KafkaError
 producer = KafkaProducer(bootstrap_servers=['172.17.0.3:9092'])
 
 # Asynchronous by default
-future = producer.send('topic', b'Hidden Message')
+future = producer.send('topic', b'Ohayo Sekai')
 
 # Block for 'synchronous' sends
 try:

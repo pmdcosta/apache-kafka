@@ -6,3 +6,4 @@ kafka:
     - zookeeper:zk
   environment:
     HOSTNAME_COMMAND: 'hostname -i'
+    KAFKA_PORT: 9092

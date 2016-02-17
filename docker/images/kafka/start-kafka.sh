@@ -4,7 +4,7 @@
 # * HOSTNAME_COMMAND: 'hostname -i'
 
 # Optional ENV variables:
-# * KAFKA_PORT: 9092
+# * KAFKA_PORT: 9093
 # * KAFKA_BROKER_ID: -1
 # * KAFKA_ZOOKEEPER_CONNECT: 172.170.0.2:2181
 # * KAFKA_ADVERTISED_HOST_NAME: 192.168.1.200
@@ -14,7 +14,7 @@
 # * KAFKA_MESSAGE_MAX_BYTES: 2000000
 
 if [[ -z "$KAFKA_PORT" ]]; then
-    export KAFKA_PORT=9092
+    export KAFKA_PORT=9093
 fi
 if [[ -z "$KAFKA_BROKER_ID" ]]; then
     export KAFKA_BROKER_ID=-1
@@ -25,6 +25,10 @@ fi
 if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" && -n "$HOSTNAME_COMMAND" ]]; then
     export KAFKA_ADVERTISED_HOST_NAME=$(eval $HOSTNAME_COMMAND)
 fi
+if [[ ! -z "$SSL_ENABLE" ]]; then
+    mv $KAFKA_HOME/config/ssl.properties $KAFKA_HOME/config/server.properties
+fi
+
 
 for VAR in `env`
 do
