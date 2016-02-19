@@ -1,0 +1,37 @@
+# Generate the key and the certificate for each machine in the cluster
+#		Common name (CN) should match exactly with the fully qualified domain name (FQDN) of the server.
+#		The client compares the CN with the DNS domain name to ensure that it is connecting to the desired server.
+keytool -keystore kafka_01.keystore.jks -alias kafka_01 -validity 365 -genkey
+keytool -keystore kafka_02.keystore.jks -alias kafka_02 -validity 365 -genkey
+keytool -keystore zookeeper_01.keystore.jks -alias zookeeper_01 -validity 365 -genkey
+
+# Generate the key and the certificate for the CA
+openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
+
+# Add the CA to the server's truststore
+# 		Importing a certificate into a truststore means trusting all certificates that are signed by that certificate
+keytool -keystore server.truststore.jks -alias CARoot -import -file ca-cert
+
+# Sign the server's certificates with the CA
+#  		We need to export the certificates from the keystores
+keytool -keystore kafka_01.keystore.jks -alias kafka_01 -certreq -file cert-kafka_01
+keytool -keystore kafka_02.keystore.jks -alias kafka_02 -certreq -file cert-kafka_02
+keytool -keystore zookeeper_01.keystore.jks -alias zookeeper_01 -certreq -file cert-zookeeper_01
+#		Sign it with the CA
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-kafka_01 -out cert-signed-kafka_01 -days 365 -CAcreateserial -passin pass:password
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-kafka_02 -out cert-signed-kafka_02 -days 365 -CAcreateserial -passin pass:password
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-zookeeper_01 -out cert-signed-zookeeper_01 -days 365 -CAcreateserial -passin pass:password
+#		Import the CA certificate into the keystore
+keytool -keystore kafka_01.keystore.jks -alias CARoot -import -file ca-cert
+keytool -keystore kafka_01.keystore.jks -alias kafka_01 -import -file cert-signed-kafka_01
+keytool -keystore kafka_02.keystore.jks -alias CARoot -import -file ca-cert
+keytool -keystore kafka_02.keystore.jks -alias kafka_02 -import -file cert-signed-kafka_02
+keytool -keystore zookeeper_01.keystore.jks -alias CARoot -import -file ca-cert
+keytool -keystore zookeeper_01.keystore.jks -alias zookeeper_01 -import -file cert-signed-zookeeper_01
+
+# Generate the key and the certificate for each client
+openssl genrsa -out key.pem 64
+openssl req -new -key key.pem -out req.pem -outform PEM -subj "/C=PT/ST=Coimbra/L=Coimbra/O=Whitesmith/OU=Qold/CN=producer" -nodes
+
+# Sign client certificates
+openssl x509 -req -CA ca-cert -CAkey ca-key -in req.pem -out signed-req.pem -days 365 -CAcreateserial -passin pass:password

@@ -1,7 +1,7 @@
 from kafka import KafkaConsumer
 
 # To consume latest messages and auto-commit offsets
-consumer = KafkaConsumer(group_id='my-group', bootstrap_servers=['172.17.0.3:9092'])
+consumer = KafkaConsumer(group_id='python_01', bootstrap_servers=['172.17.0.3:9092'])
 consumer.subscribe(topics=['topic'])
 
 try:
